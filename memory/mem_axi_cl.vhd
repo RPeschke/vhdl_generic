@@ -5,7 +5,7 @@ library ieee;
 ---- AXI FIFO with common clock
 ------------------------------------------------------------------------
 
-  use work.xgen_axistream_32.all;
+  use work.axi_stream_s32.all;
 
 
 entity fifo_cc_axi_32 is
@@ -17,11 +17,11 @@ entity fifo_cc_axi_32 is
   port(
     clk       : in   std_logic := '0'; 
     rst       : in  std_logic := '0'; 
-    RX_m2s  : in   axisStream_32_m2s := axisStream_32_m2s_null;
-    RX_s2m  : out  axisStream_32_s2m := axisStream_32_s2m_null;
+    RX_m2s  : in   axi_stream_32_m2s := axi_stream_32_m2s_null;
+    RX_s2m  : out  axi_stream_32_s2m := axi_stream_32_s2m_null;
 
-    TX_m2s  : out   axisStream_32_m2s := axisStream_32_m2s_null;
-    TX_s2m   : in  axisStream_32_s2m   := axisStream_32_s2m_null;
+    TX_m2s  : out   axi_stream_32_m2s := axi_stream_32_m2s_null;
+    TX_s2m   : in  axi_stream_32_s2m   := axi_stream_32_s2m_null;
     counter : out std_logic_vector(DEPTH-1 downto 0) := (others => '0')
 
   );

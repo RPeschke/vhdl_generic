@@ -5,11 +5,10 @@ library ieee;
   use IEEE.STD_LOGIC_1164.all;
   use ieee.numeric_std.all;
 
-  use work.CSV_UtilityPkg.all;
+
   
   use work.axiDWORDbi_p.all;
-  use work.fifo_cc_pgk_32.all;
-  use work.type_conversions_pgk.all;
+
   use work.axi_stream_pgk_32.all;
   use work.Imp_test_bench_pgk.all;
 
@@ -57,7 +56,7 @@ begin
 
     process(clk) is 
         variable axi_in        : axi_stream_32_slave_stream := axi_stream_32_slave_stream_null;
-        variable rxbuffer      : slv(31 downto 0) := (others => '0');
+        variable rxbuffer      : std_logic_vector(31 downto 0) := (others => '0');
         variable out_fifo      : axi_stream_32_master_stream := axi_stream_32_master_stream_null;
         variable  counter      : integer := 0;
     begin
