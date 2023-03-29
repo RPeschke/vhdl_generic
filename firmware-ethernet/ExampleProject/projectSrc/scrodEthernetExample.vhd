@@ -65,8 +65,6 @@ begin
 
 
 
-
-
    --------------------------------
    -- Gigabit Ethernet Interface --
    --------------------------------
@@ -102,6 +100,8 @@ begin
          TX_m2s       => TX_m2s,
          TX_s2m       => TX_s2m          
       );
+
+
 
 lbl: for var in 0 to NUM_IP_G - 1 generate
    TX_m2s(var) <= RX_m2s(var);
