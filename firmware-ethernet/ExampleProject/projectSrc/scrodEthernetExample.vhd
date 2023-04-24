@@ -18,62 +18,105 @@
 --
 ----------------------------------------------------------------------------------
 library IEEE;
-   use IEEE.STD_LOGIC_1164.ALL;
-   use work.UtilityPkg.all;
-   use work.GigabitEthPkg.all;
-   use work.axi_stream_s32.all;
+use IEEE.STD_LOGIC_1164.ALL;
+--use IEEE.NUMERIC_STD.ALL;
+use work.UtilityPkg.all;
+use work.Eth1000BaseXPkg.all;
+use work.GigabitEthPkg.all;
 
+library UNISIM;
+use UNISIM.VComponents.all;
 
 entity scrodEthernetExample is
    generic (
-      NUM_IP_G        : integer := 2
+      REG_ADDR_BITS_G : integer := 16;
+      REG_DATA_BITS_G : integer := 16;
+      NUM_IP_G        : integer := 2;
+      GATE_DELAY_G    : time := 1 ns
    );
    port ( 
       -- Direct GT connections
-      gtTxP        : out std_logic;
-      gtTxN        : out std_logic;
-      gtRxP        :  in std_logic;
-      gtRxN        :  in std_logic;
-      gtClkP       :  in std_logic;
-      gtClkN       :  in std_logic;
+      gtTxP        : out sl;
+      gtTxN        : out sl;
+      gtRxP        :  in sl;
+      gtRxN        :  in sl;
+      gtClkP       :  in sl;
+      gtClkN       :  in sl;
       -- Alternative clock input
-		fabClkP      :  in std_logic;
-		fabClkN      :  in std_logic;
+		fabClkP      :  in sl;
+		fabClkN      :  in sl;
       -- SFP transceiver disable pin
-      txDisable    : out std_logic
+      txDisable    : out sl
 --      -- Status and diagnostics out
-
+--      ethSync      : out  sl;
+--      ethReady     : out  sl;
+--      led          : out  slv(15 downto 0)
    );
 end entity;
 
-architecture rtl of scrodEthernetExample is
-   signal clk    : sl;
-   -- User Data interfaces
-   signal RX_m2s          :   axi_stream_32_m2s_a(NUM_IP_G-1 downto 0);
-   signal RX_s2m          :    axi_stream_32_s2m_a(NUM_IP_G-1 downto 0);
+architecture Behavioral of scrodEthernetExample is
 
-   signal TX_m2s          :    axi_stream_32_m2s_a(NUM_IP_G-1 downto 0);
-   signal TX_s2m          :   axi_stream_32_s2m_a(NUM_IP_G-1 downto 0);
+	signal ethSync      : sl;
+	signal ethReady     : sl;
+	signal led          : slv(15 downto 0);
 
+   signal fabClk       : sl;
+   signal ethClk62     : sl;
+   signal ethClk125    : sl;
+
+   signal userRst     : sl;
+
+   signal ethRxLinkSync  : sl;
+   signal ethAutoNegDone : sl;
+
+	signal ethCoreMacAddr : MacAddrType := MAC_ADDR_DEFAULT_C;
    signal ethCoreIpAddr  : IpAddrType  := (3 => x"C0", 2 => x"A8", 1 => x"02", 0 => x"20");
    signal ethCoreIpAddr1 : IpAddrType  := (3 => x"C0", 2 => x"A8", 1 => x"02", 0 => x"21");
+   
+   signal tpData      : slv(31 downto 0);
+   signal tpDataValid : sl;
+   signal tpDataLast  : sl;
+   signal tpDataReady : sl;
+   
+   -- User Data interfaces
+   signal userTxDataChannels : Word32Array(NUM_IP_G-1 downto 0);
+   signal userTxDataValids   : slv(NUM_IP_G-1 downto 0);
+   signal userTxDataLasts    : slv(NUM_IP_G-1 downto 0);
+   signal userTxDataReadys   : slv(NUM_IP_G-1 downto 0);
+   signal userRxDataChannels : Word32Array(NUM_IP_G-1 downto 0);
+   signal userRxDataValids   : slv(NUM_IP_G-1 downto 0);
+   signal userRxDataLasts    : slv(NUM_IP_G-1 downto 0);
+   signal userRxDataReadys   : slv(NUM_IP_G-1 downto 0);
 
-   signal ipAddrs         :   IpAddrArray(NUM_IP_G-1 downto 0) := (0 => ethCoreIpAddr, 1 => ethCoreIpAddr1);
-   signal udpPorts        :   Word16Array(NUM_IP_G-1 downto 0) := (others => x"07D0");
-
+   -- Register control interfaces
+   signal regAddr     : slv(REG_ADDR_BITS_G-1 downto 0);
+   signal regWrData   : slv(REG_DATA_BITS_G-1 downto 0);
+   signal regRdData   : slv(REG_DATA_BITS_G-1 downto 0);
+   signal regReq      : sl;
+   signal regOp       : sl;
+   signal regAck      : sl;
+   
+   -- Test registers
+   -- Default is to send 1000 counter words once per second.
+   signal waitCyclesHigh : slv(15 downto 0) := x"0773";
+   signal waitCyclesLow  : slv(15 downto 0) := x"5940";
+   signal numWords       : slv(15 downto 0) := x"02E9";
+   
 begin
 
+   ethSync           <= ethRxLinkSync;
+   ethReady          <= ethAutoNegDone;
 
+   U_IBUFGDS : IBUFGDS port map ( I => fabClkP, IB => fabClkN, O => fabClk);
 
    --------------------------------
    -- Gigabit Ethernet Interface --
    --------------------------------
-   U_Ethernet2axistream : entity work.Ethernet2axistream
+   U_S6EthTop : entity work.S6EthTop
       generic map (
-         NUM_IP_G   => NUM_IP_G
-      )  port map (
-
-         clk           => clk,
+         NUM_IP_G     => 2
+      )
+      port map (
          -- Direct GT connections
          gtTxP           => gtTxP,
          gtTxN           => gtTxN,
@@ -82,31 +125,112 @@ begin
          gtClkP          => gtClkP,
          gtClkN          => gtClkN,
          -- Alternative clock input from fabric
-
-
-
-	      fabClkP       => fabClkP,
-	      fabClkN       => fabClkN,
-          -- SFP transceiver disable pin
-         txDisable      => txDisable,
-
-         macAddr       => MAC_ADDR_DEFAULT_C,
-         ipAddrs       => ipAddrs ,     
-         udpPorts      => udpPorts,
-
-         RX_m2s       => RX_m2s,
-         RX_s2m       => RX_s2m,
-
-         TX_m2s       => TX_m2s,
-         TX_s2m       => TX_s2m          
+         fabClkIn        => fabClk,
+         -- SFP transceiver disable pin
+         txDisable       => txDisable,
+         -- Clocks out from Ethernet core
+         ethUsrClk62     => ethClk62,
+         ethUsrClk125    => ethClk125,
+         -- Status and diagnostics out
+         ethSync         => ethRxLinkSync,
+         ethReady        => ethAutoNegDone,
+         led             => led,
+         -- Core settings in 
+         macAddr         => ethCoreMacAddr,
+         ipAddrs         => (0 => ethCoreIpAddr, 1 => ethCoreIpAddr1),
+         udpPorts        => (0 => x"07D0",       1 => x"07D0"), --x7D0 = 2000,
+         -- User clock inputs
+         userClk         => ethClk125,
+         userRstIn       => '0',
+         userRstOut      => userRst,
+         -- User data interfaces
+         userTxData      => userTxDataChannels,
+         userTxDataValid => userTxDataValids,
+         userTxDataLast  => userTxDataLasts,
+         userTxDataReady => userTxDataReadys,
+         userRxData      => userRxDataChannels,
+         userRxDataValid => userRxDataValids,
+         userRxDataLast  => userRxDataLasts,
+         userRxDataReady => userRxDataReadys
       );
 
+   U_TpGenTx : entity work.TpGenTx
+      generic map (
+--         NUM_WORDS_G   => 1000,
+--         WAIT_CYCLES_G => 100,
+         GATE_DELAY_G  => GATE_DELAY_G
+      )
+      port map (
+         -- User clock and reset
+         userClk         => ethClk125,
+         userRst         => userRst,
+         -- Configuration
+         waitCycles      => waitCyclesHigh & waitCyclesLow,
+         numWords        => x"0000" & numWords,
+         -- Connection to user logic
+         userTxData      => tpData,
+         userTxDataValid => tpDataValid,
+         userTxDataLast  => tpDataLast,
+         userTxDataReady => tpDataReady
+      );
 
+   -- Channel 0 TX high speed test pattern
+   --           RX unused
+   userTxDataChannels(0) <= tpData;
+   userTxDataValids(0)   <= tpDataValid;
+   userTxDataLasts(0)    <= tpDataLast;
+   tpDataReady           <= userTxDataReadys(0);
+   -- Note that the Channel 0 RX channels are unused here
+   --userRxDataChannels;
+   --userRxDataValids;
+   --userRxDataLasts;
+   userRxDataReadys(0) <= '1';
 
-lbl: for var in 0 to NUM_IP_G - 1 generate
-   TX_m2s(var) <= RX_m2s(var);
-   RX_s2m(var) <= TX_s2m(var);
-end generate;
+   -- Channel 1 can be modified to a a simple loopback like this:
+   -- userTxDataChannels(1) <= userRxDataChannels(1);
+   -- userTxDataValids(1)   <= userRxDataValids(1);
+   -- userTxDataLasts(1)    <= userRxDataLasts(1);
+   -- userRxDataReadys(1)   <= userTxDataReadys(1);      
+   -- ...
+   -- Instead of this:
+   -- Channel 1 as a command interpreter
+	
+	userTxDataChannels(1) <= userRxDataChannels(1);
+   userTxDataValids(1)  <=  userRxDataValids(1);
+	userTxDataLasts(1) <= userRxDataLasts(1);
+	userRxDataReadys(1) <= userTxDataReadys(1);
+	
+	
+	
+   -- A few registers to toy with
+   process(ethClk125) begin
+      if rising_edge(ethClk125) then
+         if userRst = '1' then
+            regAck    <= '0';
+            regRdData <= (others => '0');
+         elsif regReq = '1' then
+            regAck <= regReq;
+            case regAddr is
+               when x"0000" => regRdData <= numWords;
+                               if regOp = '1' then
+                                  numWords <= regWrData;
+                               end if;
+               when x"0001" => regRdData <= waitCyclesHigh;
+                               if regOp = '1' then
+                                  waitCyclesHigh <= regWrData;
+                               end if;
+               when x"0002" => regRdData <= waitCyclesLow;
+                               if regOp = '1' then
+                                  waitCyclesLow <= regWrData;
+                               end if;                               
+               when others  =>
+                  regRdData <= (others => '0');
+            end case;
+         else
+            regAck <= '0';
+         end if;
+      end if;
+   end process;
          
-end architecture;
+end Behavioral;
 

@@ -29,8 +29,6 @@ package UtilityPkg is
    type Word8Array  is array (natural range <>) of slv( 7 downto 0);
    type Word9Array  is array (natural range <>) of slv( 8 downto 0);
    type Word10Array is array (natural range <>) of slv( 9 downto 0);
-   type Word12Array is array (natural range <>) of slv(11 downto 0);
-
    type Word13Array is array (natural range <>) of slv(12 downto 0);
    type Word16Array is array (natural range <>) of slv(15 downto 0);
    type Word32Array is array (natural range <>) of slv(31 downto 0);

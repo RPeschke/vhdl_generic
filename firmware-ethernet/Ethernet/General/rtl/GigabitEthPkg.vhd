@@ -42,8 +42,7 @@ package GigabitEthPkg is
 
    -- Type for IP address
    type IPAddrType is array(3 downto 0) of std_logic_vector(7 downto 0);
-   --constant IP_ADDR_DEFAULT_C : IPAddrType := (3 => x"C0", 2 => x"A8", 1 => x"01", 0 => x"14"); --192.168.1.20
-   constant IP_ADDR_DEFAULT_C : IPAddrType := (3 => x"C0", 2 => x"A8", 1 => x"01", 0 => x"15"); --192.168.1.21
+   constant IP_ADDR_DEFAULT_C : IPAddrType := (3 => x"C0", 2 => x"A8", 1 => x"01", 0 => x"14"); --192.168.1.20
    constant IP_ADDR_INIT_C    : IPAddrType := (others => (others => '0'));
    -- Array of IP addresses 
    type IpAddrArray is array(natural range<>) of IpAddrType;
