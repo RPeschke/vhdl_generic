@@ -7,7 +7,9 @@ library ieee;
 
   use work.axi_stream_s32.all;
 
-
+  use work.axi_stream_s32_base.all;
+  
+  
 entity fifo_cc_axi_32 is
   generic(
     DATA_WIDTH :natural := 32;

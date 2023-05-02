@@ -402,17 +402,17 @@ end record;
     procedure push(self: inout AXI4LITE_slave ; signal  s2m : out AXI4LITE_s2m);
 
     function  is_requesting_data(self:  AXI4LITE_slave) return boolean;
-    procedure get_read_address(self: inout AXI4LITE_slave ; address : out std_logic_vector(31 downto 0));
-    procedure get_read_address_s(self: inout AXI4LITE_slave ;signal address : out std_logic_vector(31 downto 0));
-    procedure set_read_data(self: inout AXI4LITE_slave ; data :  in std_logic_vector(31 downto 0));
+    procedure get_read_address(self: inout AXI4LITE_slave ; address : out std_logic_vector);
+    procedure get_read_address_s(self: inout AXI4LITE_slave ;signal address : out std_logic_vector);
+    procedure set_read_data(self: inout AXI4LITE_slave ; data :  in std_logic_vector);
 
     function  is_receiving_data(self:  AXI4LITE_slave ) return boolean;
-    procedure get_write_data(self: inout AXI4LITE_slave ; addr :  out std_logic_vector(31 downto 0);  data :  out std_logic_vector(31 downto 0));
+    procedure get_write_data(self: inout AXI4LITE_slave ; addr :  out std_logic_vector;  data :  out std_logic_vector);
     
     procedure get_write_data_s(
         self: inout AXI4LITE_slave ; 
-        signal addr :  out std_logic_vector(31 downto 0);  
-        signal data :  out std_logic_vector(31 downto 0)
+        signal addr :  out std_logic_vector;  
+        signal data :  out std_logic_vector
         );
 
 end package;
@@ -579,23 +579,24 @@ package body AXI4LITE_pac is
         return  self.read_addr.valid = '1' and self.rx.S_AXI_R_s2m.S_AXI_RVALID = '0';
     end function;
 
-    procedure get_read_address(self: inout AXI4LITE_slave ; address : out std_logic_vector(31 downto 0)) is 
+    procedure get_read_address(self: inout AXI4LITE_slave ; address : out std_logic_vector) is 
     begin 
-        address := self.read_addr.data;
+        address := self.read_addr.data(address'range);
         self.read_addr.valid := '0';
     end procedure;
 
 
-    procedure get_read_address_s(self: inout AXI4LITE_slave ;signal address : out std_logic_vector(31 downto 0)) is 
+    procedure get_read_address_s(self: inout AXI4LITE_slave ;signal address : out std_logic_vector) is 
     begin 
-        address <= self.read_addr.data;
+        address <= self.read_addr.data(address'range);
         self.read_addr.valid := '0';
     end procedure;
 
 
-    procedure set_read_data(self: inout AXI4LITE_slave ; data :  in std_logic_vector(31 downto 0)) is 
+    procedure set_read_data(self: inout AXI4LITE_slave ; data :  in std_logic_vector) is 
     begin 
-        self.rx.S_AXI_R_s2m.S_AXI_RDATA  := data;
+        self.rx.S_AXI_R_s2m.S_AXI_RDATA := (others =>  '0');
+        self.rx.S_AXI_R_s2m.S_AXI_RDATA(data'range)  := data;
         self.rx.S_AXI_R_s2m.S_AXI_RVALID := '1';
     
     end procedure;
@@ -607,12 +608,12 @@ package body AXI4LITE_pac is
     end function;
 
 
-    procedure get_write_data(self: inout AXI4LITE_slave ; addr :  out std_logic_vector(31 downto 0);  data :  out std_logic_vector(31 downto 0)) is 
+    procedure get_write_data(self: inout AXI4LITE_slave ; addr :  out std_logic_vector;  data :  out std_logic_vector) is 
     begin 
-        addr := self.write_addr.data;
+        addr := self.write_addr.data(addr'range);
         self.write_addr.valid := '0';
 
-        data := self.write_data.data;
+        data := self.write_data.data(data'range);
         self.write_data.valid := '0';
         
         self.rx.S_AXI_B_s2m.S_AXI_BRESP := AXI4_lite_Response_Signalling.OKAY;
@@ -621,13 +622,13 @@ package body AXI4LITE_pac is
     end procedure;
 
 
-    procedure get_write_data_s(self: inout AXI4LITE_slave ; signal addr :  out std_logic_vector(31 downto 0);  signal data :  out std_logic_vector(31 downto 0) ) is 
+    procedure get_write_data_s(self: inout AXI4LITE_slave ; signal addr :  out std_logic_vector;  signal data :  out std_logic_vector) is 
     begin
     
-        addr <= self.write_addr.data;
+        addr <= self.write_addr.data(addr'range);
         self.write_addr.valid := '0';
 
-        data <= self.write_data.data;
+        data <= self.write_data.data(data'range);
         self.write_data.valid := '0';
         self.rx.S_AXI_B_s2m.S_AXI_BRESP := AXI4_lite_Response_Signalling.OKAY;
         self.rx.S_AXI_B_s2m.S_AXI_BVALID := '1';

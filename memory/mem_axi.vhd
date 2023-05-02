@@ -5,7 +5,7 @@ library ieee;
 ---- AXI FIFO with common clock
 ------------------------------------------------------------------------
 
-  use work.xgen_axistream_32.all;
+
 
 entity fifo_cc_axi is
   generic(
