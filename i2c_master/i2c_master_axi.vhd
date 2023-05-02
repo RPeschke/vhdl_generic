@@ -4,6 +4,7 @@ library ieee;
   USE work.axi_stream_s32.ALL;
   USE work.i2c_master_axi_interface_pack.ALL;
   use work.axi_stream_s32_base.all;
+  use work.i2c_master_pkg.all;
 
 entity i2c_master_axi is
   GENERIC(
@@ -37,6 +38,9 @@ architecture rtl of i2c_master_axi is
     signal ack_error :  STD_LOGIC;
     signal scl_out   :   STD_LOGIC;
     signal sda_out   :   STD_LOGIC :='0';
+
+    signal i2c_m2s :  i2c_master_m2s := i2c_master_m2s_null;
+    signal i2c_s2m :  i2c_master_s2m := i2c_master_s2m_null;
 begin
 i2c_axi  : ENTITY work.i2c_master_axi_interface PORT map(
     clk => clk,
@@ -48,13 +52,8 @@ i2c_axi  : ENTITY work.i2c_master_axi_interface PORT map(
     tx_m2s => tx_m2s,
     tx_s2m => tx_s2m,
 
-    ena => ena,
-    addr => addr ,
-    rw => rw ,
-    data_wr => data_wr ,
-    busy => i_busy ,
-    data_rd => data_rd ,
-    ack_error => ack_error 
+    i2c_m2s => i2c_m2s,
+    i2c_s2m => i2c_s2m
   );
 
     rst_n <= not rst;
@@ -63,13 +62,8 @@ i2c : ENTITY work.i2c_master GENERIC map(
     bus_clk   => bus_clk) PORT map(
     clk => clk,
     reset_n => rst_n,
-    ena => ena,
-    addr => addr ,
-    rw => rw ,
-    data_wr => data_wr ,
-    busy => i_busy ,
-    data_rd => data_rd ,
-    ack_error => ack_error ,
+    i2c_m2s => i2c_m2s,
+    i2c_s2m => i2c_s2m,
     sda     => sda,
     scl     => scl,
     scl_out  => scl_out,

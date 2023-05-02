@@ -32,6 +32,7 @@
 LIBRARY ieee;
 USE ieee.std_logic_1164.all;
 USE ieee.std_logic_unsigned.all;
+  use work.i2c_master_pkg.all;
 
 ENTITY i2c_master IS
   GENERIC(
@@ -40,13 +41,8 @@ ENTITY i2c_master IS
   PORT(
     clk       : IN     STD_LOGIC;                    --system clock
     reset_n   : IN     STD_LOGIC;                    --active low reset
-    ena       : IN     STD_LOGIC;                    --latch in command
-    addr      : IN     STD_LOGIC_VECTOR(6 DOWNTO 0); --address of target slave
-    rw        : IN     STD_LOGIC;                    --'0' is write, '1' is read
-    data_wr   : IN     STD_LOGIC_VECTOR(7 DOWNTO 0); --data to write to slave
-    busy      : OUT    STD_LOGIC;                    --indicates transaction in progress
-    data_rd   : OUT    STD_LOGIC_VECTOR(7 DOWNTO 0); --data read from slave
-    ack_error : BUFFER STD_LOGIC;                    --flag if improper acknowledge from slave
+    i2c_m2s   : in     i2c_master_m2s := i2c_master_m2s_null;
+    i2c_s2m   : out    i2c_master_s2m := i2c_master_s2m_null;
     sda       : INOUT  STD_LOGIC;                    --serial data output of i2c bus
     scl       : INOUT  STD_LOGIC;                   --serial clock output of i2c bus
     scl_out   : out  STD_LOGIC;
@@ -69,7 +65,25 @@ ARCHITECTURE logic OF i2c_master IS
   SIGNAL data_rx       : STD_LOGIC_VECTOR(7 DOWNTO 0);   --data received from slave
   SIGNAL bit_cnt       : INTEGER RANGE 0 TO 7 := 7;      --tracks bit number in transaction
   SIGNAL stretch       : STD_LOGIC := '0';               --identifies if slave is stretching scl
+
+  signal   ena       :  STD_LOGIC;                    --latch in command
+  signal   addr      :  STD_LOGIC_VECTOR(6 DOWNTO 0); --address of target slave
+  signal   rw        :  STD_LOGIC;                    --'0' is write, '1' is read
+  signal   data_wr   :  STD_LOGIC_VECTOR(7 DOWNTO 0); --data to write to slave
+  signal   busy      :  STD_LOGIC;                    --indicates transaction in progress
+  signal   data_rd   :  STD_LOGIC_VECTOR(7 DOWNTO 0); --data read from slave
+  signal   ack_error :  STD_LOGIC;                    --flag if improper acknowledge from slave
 BEGIN
+
+
+  ena <= i2c_m2s.ena;
+  addr <= i2c_m2s.addr;
+  rw <= i2c_m2s.rw;
+  data_wr <= i2c_m2s.data_wr;
+  i2c_s2m.busy <= busy;
+  i2c_s2m.data_rd <= data_rd;
+  i2c_s2m.ack_error <= ack_error;
+  
 
   --generate the timing for the bus clock (scl_clk) and the data clock (data_clk)
   PROCESS(clk, reset_n)

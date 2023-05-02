@@ -5,6 +5,7 @@ USE work.axi_stream_s32.ALL;
 USE work.axi_stream_pgk_32.ALL;
 USE work.i2c_master_axi_interface_pack.ALL;
 use work.axi_stream_s32_base.all;
+  use work.i2c_master_pkg.all;
 
 ENTITY i2c_master_axi_interface IS
   PORT (
@@ -17,13 +18,10 @@ ENTITY i2c_master_axi_interface IS
     tx_m2s : OUT axi_stream_32_m2s;
     tx_s2m : IN axi_stream_32_s2m;
 
-    ena : OUT STD_LOGIC;
-    addr : OUT STD_LOGIC_VECTOR(6 DOWNTO 0);
-    rw : OUT STD_LOGIC;
-    data_wr : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
-    busy : IN STD_LOGIC;
-    data_rd : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
-    ack_error : IN STD_LOGIC
+
+    i2c_m2s : out  i2c_master_m2s := i2c_master_m2s_null;
+    i2c_s2m : in  i2c_master_s2m := i2c_master_s2m_null
+    
   );
 END ENTITY;
 
@@ -73,52 +71,48 @@ BEGIN
     VARIABLE buff : i2c_master_t_s;
     VARIABLE i2c_m_buff : i2c_master_t;
     variable v_rx : axi_stream_32_slave_stream := axi_stream_32_slave_stream_null;
+    variable i2c_tx : i2c_master_t := i2c_master_null;
   BEGIN
     IF rising_edge(clk) THEN
       IF rst = '1' THEN
         
         reset(tx);
 
-        addr <= (OTHERS => '0');
-        rw <= '0';
-        data_wr <= (OTHERS => '0');
+        reset(i2c_tx);
         buff := (OTHERS => '0');
         i2c_m_buff := i2c_master_t_null;
 
       ELSE
         pull(v_rx ,rx_m2s );
         pull(tx);
+        pull(i2c_tx, i2c_s2m);
 
         CASE (i_state) IS
           
           
           WHEN s_idle =>
-            addr <= (OTHERS => '0');
-            data_wr <= (OTHERS => '0');
-            rw <= '0';
-            ena <= '0';
-            IF isReceivingData(v_rx) AND ready_to_send(tx) AND busy = '0' THEN
+            reset(i2c_tx);
+
+            IF isReceivingData(v_rx) AND ready_to_send(tx) AND is_ready(i2c_tx) THEN
               i_state <= s_busy;
               read_data(v_rx, buff);
               i2c_m_buff := i2c_master_t_deserialize(buff);
-              addr <= i2c_m_buff.addr;
-              data_wr <= i2c_m_buff.data;
-              rw <= i2c_m_buff.rw;
-              ena <= '1';
+              send_data(i2c_tx, i2c_m_buff.addr, i2c_m_buff.data);
+              
             END IF;
 
 
           WHEN s_busy =>
-            IF busy = '1' THEN
+            IF i2c_tx.s2m.busy = '1' THEN
               i_state <= s_done;
-              ena <= '0';
+              
             END IF;
 
 
           WHEN s_done =>
-            IF busy = '0' AND ready_to_send(tx) THEN
+            IF i2c_tx.s2m.busy = '0' AND ready_to_send(tx) THEN
               i_state <= s_idle;
-              i2c_m_buff.ack_error := ack_error;
+              i2c_m_buff.ack_error := i2c_tx.s2m.ack_error;
               if i2c_m_buff.rw = i2c_read_c then 
                 i2c_m_buff.data := convert_to_1_0(data_rd);
               end if;
@@ -129,6 +123,7 @@ BEGIN
       END IF;
       i_i2c_m_buff  <= i2c_m_buff;
       push(v_rx ,rx_s2m );
+      pull(i2c_tx, i2c_m2s);
     END IF;
   END PROCESS;
 END ARCHITECTURE;
