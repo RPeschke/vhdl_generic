@@ -21,21 +21,14 @@ entity i2c_master_axi is
     tx_m2s : OUT axi_stream_32_m2s;
     tx_s2m : IN axi_stream_32_s2m;
     sda       : INOUT  STD_LOGIC;                    --serial data output of i2c bus
-    scl       : INOUT  STD_LOGIC;                   --serial clock output of i2c bus
-    busy : out std_logic;
-    ena_o : out std_logic
+    scl       : INOUT  STD_LOGIC                     --serial clock output of i2c bus
+
   );
 end entity;
 
 architecture rtl of i2c_master_axi is
     signal rst_n :  STD_LOGIC;
-    signal ena :  STD_LOGIC;
-    signal addr :  STD_LOGIC_VECTOR(6 DOWNTO 0);
-    signal rw :  STD_LOGIC;
-    signal data_wr :  STD_LOGIC_VECTOR(7 DOWNTO 0);
-    signal i_busy :  STD_LOGIC;
-    signal data_rd :  STD_LOGIC_VECTOR(7 DOWNTO 0);
-    signal ack_error :  STD_LOGIC;
+
     signal scl_out   :   STD_LOGIC;
     signal sda_out   :   STD_LOGIC :='0';
 
@@ -69,6 +62,5 @@ i2c : ENTITY work.i2c_master GENERIC map(
     scl_out  => scl_out,
     sda_out   =>sda_out   
     );
-  ena_o <= ena;
-  busy<= i_busy;
+
 end architecture;

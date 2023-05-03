@@ -31,6 +31,7 @@ ARCHITECTURE rtl OF i2c_master_axi_interface IS
   TYPE state_t IS (s_idle, s_busy, s_done);
   SIGNAL i_state : state_t := s_idle;
   signal i_i2c_m_buff : i2c_master_t;
+  signal i_i2c_tx : i2c_master_ht := i2c_master_null;
 
   function convert_to_1_0 (data : STD_LOGIC_VECTOR) return STD_LOGIC_VECTOR is
     variable result : STD_LOGIC_VECTOR(data'range) := (OTHERS => '1');
@@ -71,7 +72,7 @@ BEGIN
     VARIABLE buff : i2c_master_t_s;
     VARIABLE i2c_m_buff : i2c_master_t;
     variable v_rx : axi_stream_32_slave_stream := axi_stream_32_slave_stream_null;
-    variable i2c_tx : i2c_master_t := i2c_master_null;
+    variable i2c_tx : i2c_master_ht := i2c_master_null;
   BEGIN
     IF rising_edge(clk) THEN
       IF rst = '1' THEN
@@ -86,44 +87,33 @@ BEGIN
         pull(v_rx ,rx_m2s );
         pull(tx);
         pull(i2c_tx, i2c_s2m);
+        i_i2c_tx <= i2c_tx;
+        i2c_m_buff := i2c_master_t_null;
 
-        CASE (i_state) IS
+        IF isReceivingData(v_rx) AND ready_to_send(tx) AND is_ready(i2c_tx) THEN
           
-          
-          WHEN s_idle =>
-            reset(i2c_tx);
-
-            IF isReceivingData(v_rx) AND ready_to_send(tx) AND is_ready(i2c_tx) THEN
-              i_state <= s_busy;
-              read_data(v_rx, buff);
-              i2c_m_buff := i2c_master_t_deserialize(buff);
-              send_data(i2c_tx, i2c_m_buff.addr, i2c_m_buff.data);
+          read_data(v_rx, buff);
+          i2c_m_buff := i2c_master_t_deserialize(buff);
+          if i2c_m_buff.rw = i2c_write_c then 
+            send_data(i2c_tx, i2c_m_buff.addr, i2c_m_buff.data);
+          else
+            request_data(i2c_tx, i2c_m_buff.addr);
+          end if;
               
-            END IF;
-
-
-          WHEN s_busy =>
-            IF i2c_tx.s2m.busy = '1' THEN
-              i_state <= s_done;
               
-            END IF;
+        END IF;
 
+        IF  ready_to_send(tx) AND is_done(i2c_tx) THEN
+          read_data(i2c_tx, i2c_m_buff);
+          send_data(tx, i2c_master_t_serialize(i2c_m_buff));
+        end if;
 
-          WHEN s_done =>
-            IF i2c_tx.s2m.busy = '0' AND ready_to_send(tx) THEN
-              i_state <= s_idle;
-              i2c_m_buff.ack_error := i2c_tx.s2m.ack_error;
-              if i2c_m_buff.rw = i2c_read_c then 
-                i2c_m_buff.data := convert_to_1_0(data_rd);
-              end if;
-              buff := i2c_master_t_serialize(i2c_m_buff);
-              send_data(tx, buff);
-            END IF;
-        END CASE;
+   
       END IF;
       i_i2c_m_buff  <= i2c_m_buff;
+   
       push(v_rx ,rx_s2m );
-      pull(i2c_tx, i2c_m2s);
+      push(i2c_tx, i2c_m2s);
     END IF;
   END PROCESS;
 END ARCHITECTURE;
