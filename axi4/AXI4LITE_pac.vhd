@@ -402,6 +402,8 @@ end record;
     procedure push(self: inout AXI4LITE_slave ; signal  s2m : out AXI4LITE_s2m);
 
     function  is_requesting_data(self:  AXI4LITE_slave) return boolean;
+    
+    function  is_requesting_data(self:  AXI4LITE_slave; addr: integer ) return boolean;
     procedure get_read_address(self: inout AXI4LITE_slave ; address : out std_logic_vector);
     procedure get_read_address_s(self: inout AXI4LITE_slave ;signal address : out std_logic_vector);
     procedure set_read_data(self: inout AXI4LITE_slave ; data :  in std_logic_vector);
@@ -578,6 +580,14 @@ package body AXI4LITE_pac is
     begin
         return  self.read_addr.valid = '1' and self.rx.S_AXI_R_s2m.S_AXI_RVALID = '0';
     end function;
+    
+    function  is_requesting_data(self:  AXI4LITE_slave; addr: integer ) return boolean is 
+        variable addr_slv: std_logic_vector(self.read_addr.data'range) := (others => '0');
+    begin
+        addr_slv := std_logic_vector(to_unsigned(addr, addr_slv'length)); 
+        return  self.read_addr.valid = '1' and self.rx.S_AXI_R_s2m.S_AXI_RVALID = '0' and self.read_addr.data = addr_slv;
+    end function;
+
 
     procedure get_read_address(self: inout AXI4LITE_slave ; address : out std_logic_vector) is 
     begin 
@@ -598,7 +608,8 @@ package body AXI4LITE_pac is
         self.rx.S_AXI_R_s2m.S_AXI_RDATA := (others =>  '0');
         self.rx.S_AXI_R_s2m.S_AXI_RDATA(data'range)  := data;
         self.rx.S_AXI_R_s2m.S_AXI_RVALID := '1';
-    
+        
+        self.read_addr.valid := '0';
     end procedure;
 
 
