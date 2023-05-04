@@ -1,10 +1,14 @@
 
-LIBRARY ieee;
-USE ieee.std_logic_1164.ALL;
-USE ieee.numeric_std.ALL;
-USE work.axi_stream_s32_base.ALL;
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+use work.axi_stream_s32_base.all;
 
-PACKAGE axi_stream_32 IS
+package axi_stream_32 is
+
+
+
+
 
   -- Starting Pseudo class axi_stream_32_m
 
@@ -25,6 +29,8 @@ PACKAGE axi_stream_32 IS
   PROCEDURE push(self : INOUT axi_stream_32_m; SIGNAL DataOut : OUT axi_stream_32_m2s);
   PROCEDURE reset(self : INOUT axi_stream_32_m);
   -- End Pseudo class axi_stream_32_m
+
+
 
   -- Starting Pseudo class axi_stream_32_s
 
@@ -50,11 +56,13 @@ PACKAGE axi_stream_32 IS
   -- End Pseudo class axi_stream_32_s
 
 
-END PACKAGE;
+
+end package;
 
 
-PACKAGE BODY axi_stream_32 IS
-  -- Starting Pseudo class axi_stream_32_m
+package body axi_stream_32 is
+   
+-- Starting Pseudo class axi_stream_32_m
   FUNCTION ready_to_send(self : axi_stream_32_m) RETURN BOOLEAN IS 
   BEGIN
 
@@ -96,6 +104,8 @@ PACKAGE BODY axi_stream_32 IS
     self := axi_stream_32_m_null;
   end procedure;
   -- End Pseudo class axi_stream_32_m
+
+
 
   -- Starting Pseudo class axi_stream_32_s
   FUNCTION IsEndOfStream(self : axi_stream_32_s) RETURN BOOLEAN IS 
@@ -146,4 +156,5 @@ PACKAGE BODY axi_stream_32 IS
 
   -- End Pseudo class axi_stream_32_s
 
-END PACKAGE BODY;
+end package body ;
+
