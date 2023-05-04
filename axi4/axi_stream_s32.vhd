@@ -75,7 +75,7 @@ PACKAGE axi_stream_s32 IS
   PROCEDURE observe_data(SIGNAL self : INOUT axi_stream_32_slave; data_out : OUT STD_LOGIC_VECTOR);
 
   PROCEDURE pull(SIGNAL self : INOUT axi_stream_32_slave);
-  PROCEDURE pull(SIGNAL self : INOUT axi_stream_32_slave_a);
+  
 
 
   PROCEDURE connect(SIGNAL data_in : INOUT axi_stream_32_slave; SIGNAL data_out : INOUT axi_stream_32_master);
@@ -139,12 +139,7 @@ PACKAGE BODY axi_stream_s32 IS
   END PROCEDURE;
   
 
-  PROCEDURE pull(SIGNAL self : INOUT axi_stream_32_slave_a) is 
-  begin 
-    for i in self'range loop
-      pull(self(i));
-    end loop;
-  end procedure;
+
 
 
 
