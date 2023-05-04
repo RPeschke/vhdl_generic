@@ -81,7 +81,7 @@ PACKAGE BODY axi_stream_32 IS
     self.s2m := DataIn;
 
     IF (self.s2m.ready = '1') THEN
-      self.s2m := axi_stream_32_s2m_null;
+      self.m2s := axi_stream_32_m2s_null;
     END IF;
 
   END PROCEDURE;
