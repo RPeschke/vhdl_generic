@@ -96,7 +96,7 @@ package body axi_stream_32 is
 
   PROCEDURE push(self : INOUT axi_stream_32_m; SIGNAL DataOut : OUT axi_stream_32_m2s) IS 
   BEGIN
-    DataOut  <= self.m2s;
+    DataOut  <= self.m2s  after 1 ns;
   END PROCEDURE;
 
   PROCEDURE reset(self : INOUT axi_stream_32_m) is 
@@ -124,9 +124,8 @@ package body axi_stream_32 is
 
   PROCEDURE read_data(self : INOUT axi_stream_32_s; datain : OUT STD_LOGIC_VECTOR) IS 
   BEGIN
-    IF (self.internal.valid = '1') THEN
-      datain := self.internal.data(datain'RANGE);
-    END IF;
+    
+    datain := self.internal.data(datain'RANGE);
     self.internal := axi_stream_32_m2s_null;
 
   END PROCEDURE;
@@ -145,7 +144,7 @@ package body axi_stream_32 is
   BEGIN
 
     self.s2m.ready := not  self.internal.valid;
-    DataOut  <= self.s2m;
+    DataOut  <= self.s2m after 1 ns;
 
   END PROCEDURE;
   
