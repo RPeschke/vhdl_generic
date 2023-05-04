@@ -9,7 +9,7 @@ use work.UtilityPkg.all;
 use work.axiDWORDbi_p.all;
 use work.fifo_cc_pgk_32.all;
 use work.type_conversions_pgk.all;
-use work.axi_stream_pgk_32.all;
+use work.axi_stream_32.all;
 
 
 entity StreamDeserializer is 
@@ -49,7 +49,7 @@ begin
     rxDataReady <= axi_in_s2m.ready;
     seq : process (Clk) is
         variable rxbuffer      : slv(31 downto 0) := (others => '0');
-        variable axi_in : axi_stream_32_slave_stream := axi_stream_32_slave_stream_null;
+        variable axi_in : axi_stream_32_s := axi_stream_32_s_null;
         variable index : integer := 0;
     begin
         if (rising_edge(Clk)) then

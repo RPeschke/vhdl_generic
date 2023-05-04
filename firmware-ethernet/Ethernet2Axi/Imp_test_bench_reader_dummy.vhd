@@ -10,7 +10,7 @@ use work.UtilityPkg.all;
 use work.axiDWORDbi_p.all;
 use work.fifo_cc_pgk_32.all;
 use work.type_conversions_pgk.all;
-use work.axi_stream_pgk_32.all;
+use work.axi_stream_32.all;
 use work.Imp_test_bench_pgk.all;
 
 
@@ -68,7 +68,7 @@ rxDataReady <= axi_in_s2m.ready;
 
 
 seq : process (Clk) is
-  variable axi_in : axi_stream_32_slave_stream := axi_stream_32_slave_stream_null;
+  variable axi_in : axi_stream_32_s := axi_stream_32_s_null;
   variable int_buffer : integer :=0;
   variable Index : integer :=0;
   variable packetCounter : integer :=0;

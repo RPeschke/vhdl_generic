@@ -9,7 +9,7 @@ library ieee;
   use work.axiDWORDbi_p.all;
   use work.fifo_cc_pgk_32.all;
   use work.type_conversions_pgk.all;
-  use work.axi_stream_pgk_32.all;
+  use work.axi_stream_32.all;
   use work.Imp_test_bench_pgk.all;
   use work.xgen_axistream_32.all;
 

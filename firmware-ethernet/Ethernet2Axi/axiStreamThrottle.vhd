@@ -9,7 +9,7 @@ library ieee;
   
   use work.axiDWORDbi_p.all;
 
-  use work.axi_stream_pgk_32.all;
+  use work.axi_stream_32.all;
   use work.Imp_test_bench_pgk.all;
 
 entity axiStreamThrottle is
@@ -55,9 +55,9 @@ begin
     i_fifo_out_s2m.ready <= txDataReady;
 
     process(clk) is 
-        variable axi_in        : axi_stream_32_slave_stream := axi_stream_32_slave_stream_null;
+        variable axi_in        : axi_stream_32_s := axi_stream_32_s_null;
         variable rxbuffer      : std_logic_vector(31 downto 0) := (others => '0');
-        variable out_fifo      : axi_stream_32_master_stream := axi_stream_32_master_stream_null;
+        variable out_fifo      : axi_stream_32_m := axi_stream_32_m_null;
         variable  counter      : integer := 0;
     begin
         if (rising_edge(Clk)) then

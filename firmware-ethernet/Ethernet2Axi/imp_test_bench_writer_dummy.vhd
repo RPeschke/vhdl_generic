@@ -9,7 +9,7 @@ library ieee;
   use work.axiDWORDbi_p.all;
   use work.fifo_cc_pgk_32.all;
   use work.type_conversions_pgk.all;
-  use work.axi_stream_pgk_32.all;
+  use work.axi_stream_32.all;
 
 entity Imp_test_bench_writer_dummy is 
   generic ( 
@@ -62,7 +62,7 @@ architecture Behavioral of Imp_test_bench_writer_dummy is
     variable index : integer := COLNum;
     variable timer : integer := 0;
     variable  dummy_data :  slv(31 downto 0) := (others => '0');
-    variable out_fifo : axi_stream_32_master_stream := axi_stream_32_master_stream_null;
+    variable out_fifo : axi_stream_32_m := axi_stream_32_m_null;
 
     variable send_Nr_of_streams : boolean := True;
     variable send_BOS : boolean := True;

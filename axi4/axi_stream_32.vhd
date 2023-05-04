@@ -1,200 +1,149 @@
 
-library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
-use work.axi_stream_s32_base.all;
+LIBRARY ieee;
+USE ieee.std_logic_1164.ALL;
+USE ieee.numeric_std.ALL;
+USE work.axi_stream_s32_base.ALL;
 
-package axi_stream_pgk_32 is
+PACKAGE axi_stream_32 IS
 
+  -- Starting Pseudo class axi_stream_32_m
 
+  TYPE axi_stream_32_m IS RECORD
+    m2s : axi_stream_32_m2s;
+    s2m : axi_stream_32_s2m;
+  END RECORD;
 
+  CONSTANT axi_stream_32_m_null : axi_stream_32_m := (
+    m2s => axi_stream_32_m2s_null, 
+    s2m => axi_stream_32_s2m_null
+    );
 
+  FUNCTION ready_to_send(self : axi_stream_32_m) RETURN BOOLEAN;
+  PROCEDURE send_data(self : INOUT axi_stream_32_m; datain : IN STD_LOGIC_VECTOR);
+  PROCEDURE Send_end_Of_Stream(self : INOUT axi_stream_32_m);
+  PROCEDURE pull(self : INOUT axi_stream_32_m; SIGNAL DataIn : IN axi_stream_32_s2m);
+  PROCEDURE push(self : INOUT axi_stream_32_m; SIGNAL DataOut : OUT axi_stream_32_m2s);
+  PROCEDURE reset(self : INOUT axi_stream_32_m);
+  -- End Pseudo class axi_stream_32_m
 
--- Starting Pseudo class axi_stream_32_master_stream
- 
-type axi_stream_32_master_stream is record 
-data : std_logic_vector(31 downto 0); 
-last : std_logic; 
-ready : std_logic; 
-valid : std_logic; 
+  -- Starting Pseudo class axi_stream_32_s
 
-end record axi_stream_32_master_stream; 
+  TYPE axi_stream_32_s IS RECORD
+    m2s      : axi_stream_32_m2s;
+    s2m      : axi_stream_32_s2m;
+    internal : axi_stream_32_m2s;
+  END RECORD;
 
-constant  axi_stream_32_master_stream_null: axi_stream_32_master_stream := (data => (others=>'0'),
-last => '0',
-ready => '0',
-valid => '0');
+  CONSTANT axi_stream_32_s_null : axi_stream_32_s := (
+    m2s => axi_stream_32_m2s_null, 
+    s2m => axi_stream_32_s2m_null,
+    internal => axi_stream_32_m2s_null
+    );
 
- function  ready_to_send( this :   axi_stream_32_master_stream) return boolean;
- procedure send_data( this : inout axi_stream_32_master_stream; datain :in std_logic_vector);
- procedure Send_end_Of_Stream( this : inout axi_stream_32_master_stream);
- procedure pull( this : inout axi_stream_32_master_stream; signal DataIn : in  axi_stream_32_s2m);
- procedure push( this : inout axi_stream_32_master_stream; signal DataOut : out  axi_stream_32_m2s);
- 
--- End Pseudo class axi_stream_32_master_stream
+  FUNCTION IsEndOfStream(self : axi_stream_32_s) RETURN BOOLEAN;
+  FUNCTION isReceivingData(self : axi_stream_32_s) RETURN BOOLEAN;
+  PROCEDURE read_data(self : INOUT axi_stream_32_s; datain : OUT STD_LOGIC_VECTOR);
+  PROCEDURE pull(self : INOUT axi_stream_32_s; SIGNAL DataIn : IN axi_stream_32_m2s);
+  PROCEDURE push(self : INOUT axi_stream_32_s; SIGNAL DataOut : OUT axi_stream_32_s2m);
+  PROCEDURE reset(self : INOUT axi_stream_32_s);
 
-
-
--- Starting Pseudo class axi_stream_32_slave_stream
- 
-type axi_stream_32_slave_stream is record 
-data : std_logic_vector(31 downto 0); 
-data_internal2 : std_logic_vector(31 downto 0); 
-data_internal_isLast2 : std_logic; 
-data_internal_isvalid2 : std_logic; 
-data_internal_was_read2 : std_logic; 
-data_isvalid : std_logic; 
-last : std_logic; 
-ready : std_logic; 
-valid : std_logic; 
-
-end record axi_stream_32_slave_stream; 
-
-constant  axi_stream_32_slave_stream_null: axi_stream_32_slave_stream := (data => (others=>'0'),
-data_internal2 => (others=>'0'),
-data_internal_isLast2 => '0',
-data_internal_isvalid2 => '0',
-data_internal_was_read2 => '0',
-data_isvalid => '0',
-last => '0',
-ready => '0',
-valid => '0');
-
- function  IsEndOfStream( this :   axi_stream_32_slave_stream) return boolean;
- function  isReceivingData( this :   axi_stream_32_slave_stream) return boolean;
- procedure read_data( this : inout axi_stream_32_slave_stream; datain :out std_logic_vector);
- procedure pull( this : inout axi_stream_32_slave_stream; signal DataIn : in  axi_stream_32_m2s);
- procedure push( this : inout axi_stream_32_slave_stream; signal DataOut : out  axi_stream_32_s2m);
- 
--- End Pseudo class axi_stream_32_slave_stream
-
-type AXis_send_type_32 is ( 
-  normal,
-  endOfStream
- );
-end axi_stream_pgk_32;
+  -- End Pseudo class axi_stream_32_s
 
 
-package body axi_stream_pgk_32 is
-   
-
--- Starting Pseudo class axi_stream_32_master_stream
-  function  ready_to_send( this :   axi_stream_32_master_stream) return boolean is begin 
-
-    return this.valid = '0';
- 
-end function ready_to_send; 
-
- procedure send_data( this : inout axi_stream_32_master_stream; datain :in std_logic_vector) is begin 
-
-   this.valid   := '1';
-   this.data(datain'range)     := datain; 
-
- 
-end procedure ; 
-
- procedure Send_end_Of_Stream( this : inout axi_stream_32_master_stream) is begin 
-
-      this.last := '1';  
-     
-end procedure ; 
-
- procedure pull( this : inout axi_stream_32_master_stream; signal DataIn : in  axi_stream_32_s2m) is begin 
-
-this.ready := DataIn.ready;
-
-        if (this.ready = '1') then 
-          this.valid   := '0'; 
-          this.last := '0';  
-          this.data := (others => '0');
-        end if;
- 
-end procedure ; 
-
- procedure push( this : inout axi_stream_32_master_stream; signal DataOut : out  axi_stream_32_m2s) is begin 
-
-DataOut.data <= this.data;
-DataOut.last <= this.last;
-DataOut.valid <= this.valid;
-
- 
-end procedure ; 
-
- 
--- End Pseudo class axi_stream_32_master_stream
+END PACKAGE;
 
 
+PACKAGE BODY axi_stream_32 IS
+  -- Starting Pseudo class axi_stream_32_m
+  FUNCTION ready_to_send(self : axi_stream_32_m) RETURN BOOLEAN IS 
+  BEGIN
 
--- Starting Pseudo class axi_stream_32_slave_stream
-  function  IsEndOfStream( this :   axi_stream_32_slave_stream) return boolean is begin 
+    RETURN self.m2s.valid = '0';
 
-    return  this.data_internal_isvalid2 = '1' and  this.data_internal_isLast2 = '1';
- 
-end function ; 
+  END FUNCTION ready_to_send;
 
- function  isReceivingData( this :   axi_stream_32_slave_stream) return boolean is begin 
+  PROCEDURE send_data(self : INOUT axi_stream_32_m; datain : IN STD_LOGIC_VECTOR) IS 
+  BEGIN
 
-    return  this.data_internal_isvalid2 = '1' ;
- 
-end function ; 
+    self.m2s.valid := '1';
+    self.m2s.data(datain'RANGE) := datain;
+  END PROCEDURE;
 
- procedure read_data( this : inout axi_stream_32_slave_stream; datain :out std_logic_vector) is begin 
+  PROCEDURE Send_end_Of_Stream(self : INOUT axi_stream_32_m) IS 
+  BEGIN
+    self.m2s.last := '1';
 
+  END PROCEDURE;
 
-    if(this.data_internal_isvalid2 = '1') then
-        datain := this.data_internal2(datain'range);
-        this.data_internal_was_read2 :='1';
-    end if;
- 
-end procedure ; 
+  PROCEDURE pull(self : INOUT axi_stream_32_m; SIGNAL DataIn : IN axi_stream_32_s2m) IS 
+  BEGIN
 
- procedure pull( this : inout axi_stream_32_slave_stream; signal DataIn : in  axi_stream_32_m2s) is begin 
+    self.s2m := DataIn;
 
-this.data := DataIn.data;
-this.last := DataIn.last;
-this.valid := DataIn.valid;
+    IF (self.s2m.ready = '1') THEN
+      self.s2m := axi_stream_32_s2m_null;
+    END IF;
 
+  END PROCEDURE;
 
-    if( this.ready = '1'  and this.valid ='1') then 
-        this.data_isvalid := '1';
-    end if;
+  PROCEDURE push(self : INOUT axi_stream_32_m; SIGNAL DataOut : OUT axi_stream_32_m2s) IS 
+  BEGIN
+    DataOut  <= self.m2s;
+  END PROCEDURE;
 
-    this.data_internal_was_read2 := '0';
-    this.ready := '0';
+  PROCEDURE reset(self : INOUT axi_stream_32_m) is 
+  begin 
+    self := axi_stream_32_m_null;
+  end procedure;
+  -- End Pseudo class axi_stream_32_m
 
+  -- Starting Pseudo class axi_stream_32_s
+  FUNCTION IsEndOfStream(self : axi_stream_32_s) RETURN BOOLEAN IS 
+  BEGIN
 
-    if (this.data_isvalid ='1' and  this.data_internal_isvalid2 = '0') then
-        this.data_internal2:= this.data ;
-        this.data_internal_isvalid2 := this.data_isvalid;
-        this.data_internal_isLast2 := this.last;
-        this.data_isvalid:='0';
+    RETURN self.internal.valid = '1' AND self.internal.last = '1';
 
-    end if;
+  END FUNCTION;
 
+  FUNCTION isReceivingData(self : axi_stream_32_s) RETURN BOOLEAN IS 
+  BEGIN
 
-    
- 
-end procedure ; 
+    RETURN self.internal.valid = '1';
 
- procedure push( this : inout axi_stream_32_slave_stream; signal DataOut : out  axi_stream_32_s2m) is begin 
+  END FUNCTION;
 
+  PROCEDURE read_data(self : INOUT axi_stream_32_s; datain : OUT STD_LOGIC_VECTOR) IS 
+  BEGIN
+    IF (self.internal.valid = '1') THEN
+      datain := self.internal.data(datain'RANGE);
+    END IF;
+    self.internal := axi_stream_32_m2s_null;
 
-    if (this.data_internal_was_read2 = '1'   ) then
-      this.data_internal_isvalid2 := '0';
-    end if;
+  END PROCEDURE;
 
+  PROCEDURE pull(self : INOUT axi_stream_32_s; SIGNAL DataIn : IN axi_stream_32_m2s) IS 
+  BEGIN
 
-    if (this.data_isvalid = '0'   and this.data_internal_isvalid2 = '0' ) then 
-        this.ready := '1';
-    end if;
-    
-DataOut.ready <= this.ready;
+    self.m2s := DataIn;
+    IF (self.s2m.ready = '1') THEN
+      self.internal := self.m2s;
+    END IF;
 
- 
-end procedure ; 
+  END PROCEDURE;
 
- 
--- End Pseudo class axi_stream_32_slave_stream
+  PROCEDURE push(self : INOUT axi_stream_32_s; SIGNAL DataOut : OUT axi_stream_32_s2m) IS 
+  BEGIN
 
-end package body ;
+    self.s2m.ready := not  self.internal.valid;
+    DataOut  <= self.s2m;
 
+  END PROCEDURE;
+  
+  PROCEDURE reset(self : INOUT axi_stream_32_s) is 
+  begin
+    self := axi_stream_32_s_null;
+  end procedure;
+
+  -- End Pseudo class axi_stream_32_s
+
+END PACKAGE BODY;
