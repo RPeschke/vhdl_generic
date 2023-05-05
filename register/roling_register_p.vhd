@@ -23,6 +23,7 @@ package roling_register_p is
   function registerT_serialize(self : registerT) return std_logic_vector;
   function registerT_deserialize(self : std_logic_vector ) return registerT;
   procedure read_data_s(self : in registerT; signal value :out  STD_LOGIC_VECTOR ; addr :in integer);
+  function is_address(self : in registerT; addr :in integer) return boolean;
 
 end package;
 
@@ -61,5 +62,11 @@ package body roling_register_p is
       value(m - 1 downto 0) <= self.value(  m - 1 downto 0);
     end if; 
   end procedure;
+
+
+  function is_address(self : in registerT; addr :in integer) return boolean is 
+  begin
+    return to_integer(unsigned(self.address)) = addr;
+  end function;
 
 end package body;
