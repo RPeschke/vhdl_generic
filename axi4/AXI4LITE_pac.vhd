@@ -407,9 +407,18 @@ end record;
     procedure get_read_address(self: inout AXI4LITE_slave ; address : out std_logic_vector);
     procedure get_read_address_s(self: inout AXI4LITE_slave ;signal address : out std_logic_vector);
     procedure set_read_data(self: inout AXI4LITE_slave ; data :  in std_logic_vector);
+    procedure set_read_data(self: inout AXI4LITE_slave ; addr :  in  integer; data :  in std_logic_vector);
+    procedure set_read_data_default(self: inout AXI4LITE_slave ;  data :  in std_logic_vector);
 
     function  is_receiving_data(self:  AXI4LITE_slave ) return boolean;
+    function  is_receiving_data(self:  AXI4LITE_slave; addr :  in  integer) return boolean;
     procedure get_write_data(self: inout AXI4LITE_slave ; addr :  out std_logic_vector;  data :  out std_logic_vector);
+    procedure ignore_write_data(self: inout AXI4LITE_slave);
+    
+    procedure get_write_data_with_addr(self: inout AXI4LITE_slave ; addr :  in  integer;  data :  out std_logic_vector);
+    procedure get_write_data_with_addr_s(self: inout AXI4LITE_slave ; addr :  in  integer; signal data :  out std_logic_vector);
+    procedure get_write_data_with_addr_s(self: inout AXI4LITE_slave ; addr :  in  integer; signal data :  out std_logic);
+
     
     procedure get_write_data_s(
         self: inout AXI4LITE_slave ; 
@@ -612,10 +621,35 @@ package body AXI4LITE_pac is
         self.read_addr.valid := '0';
     end procedure;
 
+    procedure set_read_data(self: inout AXI4LITE_slave ; addr :  in  integer; data :  in std_logic_vector) is 
+
+    begin
+        if not is_requesting_data(self, addr) then 
+            return;
+        end if;
+        set_read_data(self, data);
+    end procedure;
+
+    procedure set_read_data_default(self: inout AXI4LITE_slave ;  data :  in std_logic_vector) is 
+    begin 
+        if self.rx.S_AXI_R_s2m.S_AXI_RVALID = '1' then 
+            return;
+        end if;
+
+        set_read_data(self, data);
+    end procedure;
+
 
     function  is_receiving_data(self:  AXI4LITE_slave ) return boolean is 
     begin 
         return self.write_addr.valid = '1' and self.write_data.valid = '1';
+    end function;
+    
+    function  is_receiving_data(self:  AXI4LITE_slave; addr :  in  integer) return boolean is 
+        variable addr_slv: std_logic_vector(self.write_addr.data'range) := (others => '0');
+    begin
+        addr_slv := std_logic_vector(to_unsigned(addr, addr_slv'length)); 
+        return is_receiving_data(self) and self.write_addr.data = addr_slv;
     end function;
 
 
@@ -629,6 +663,78 @@ package body AXI4LITE_pac is
         
         self.rx.S_AXI_B_s2m.S_AXI_BRESP := AXI4_lite_Response_Signalling.OKAY;
         self.rx.S_AXI_B_s2m.S_AXI_BVALID := '1';
+
+    end procedure;
+
+
+    
+    procedure ignore_write_data(self: inout AXI4LITE_slave) is 
+    begin 
+        
+        if not is_receiving_data(self) then 
+            return;
+        end if;
+        self.write_addr.valid := '0';
+        self.write_data.valid := '0';
+        
+        self.rx.S_AXI_B_s2m.S_AXI_BRESP := AXI4_lite_Response_Signalling.OKAY;
+        self.rx.S_AXI_B_s2m.S_AXI_BVALID := '1';
+
+    end procedure;
+
+
+    procedure get_write_data_with_addr(self: inout AXI4LITE_slave ; addr :  in  integer;  data :  out std_logic_vector) is 
+        variable addr_slv: std_logic_vector(self.write_addr.data'range) := (others => '0');
+    begin
+        if not is_receiving_data(self) then 
+            return;
+        end if;
+        
+        addr_slv := std_logic_vector(to_unsigned(addr, addr_slv'length)); 
+
+        if addr_slv /= self.write_addr.data then 
+            return;
+        end if;
+        data := self.write_data.data(data'range);
+        
+        ignore_write_data(self);
+        
+        
+    end procedure;
+
+
+
+    procedure get_write_data_with_addr_s(self: inout AXI4LITE_slave ; addr :  in  integer; signal  data :  out std_logic_vector) is 
+        variable addr_slv: std_logic_vector(self.write_addr.data'range) := (others => '0');
+    begin
+        
+        if not is_receiving_data(self) then 
+            return;
+        end if;
+        
+        addr_slv := std_logic_vector(to_unsigned(addr, addr_slv'length)); 
+
+        if addr_slv /= self.write_addr.data then 
+            return;
+        end if;
+        data <= self.write_data.data(data'range);
+        
+        ignore_write_data(self);
+
+    end procedure;
+
+    procedure get_write_data_with_addr_s(self: inout AXI4LITE_slave ; addr :  in  integer; signal data :  out std_logic) is 
+    begin 
+        if not is_receiving_data(self) then 
+            return;
+        end if;
+        
+        if addr /= to_integer(unsigned(self.write_addr.data)) then 
+            return;
+        end if;
+        data <= self.write_data.data(0);
+        
+        ignore_write_data(self);
 
     end procedure;
 
