@@ -49,6 +49,7 @@ package axi_stream_32 is
   FUNCTION IsEndOfStream(self : axi_stream_32_s) RETURN BOOLEAN;
   FUNCTION isReceivingData(self : axi_stream_32_s) RETURN BOOLEAN;
   PROCEDURE read_data(self : INOUT axi_stream_32_s; datain : OUT STD_LOGIC_VECTOR);
+  PROCEDURE observe_data(self : INOUT axi_stream_32_s; data_out : OUT STD_LOGIC_VECTOR);
   PROCEDURE pull(self : INOUT axi_stream_32_s; SIGNAL DataIn : IN axi_stream_32_m2s);
   PROCEDURE push(self : INOUT axi_stream_32_s; SIGNAL DataOut : OUT axi_stream_32_s2m);
   PROCEDURE reset(self : INOUT axi_stream_32_s);
@@ -129,6 +130,11 @@ package body axi_stream_32 is
     self.internal := axi_stream_32_m2s_null;
 
   END PROCEDURE;
+
+  PROCEDURE observe_data(self : INOUT axi_stream_32_s; data_out : OUT STD_LOGIC_VECTOR) is 
+  begin
+    data_out := self.internal.data(data_out'RANGE);
+  end procedure;
 
   PROCEDURE pull(self : INOUT axi_stream_32_s; SIGNAL DataIn : IN axi_stream_32_m2s) IS 
   BEGIN

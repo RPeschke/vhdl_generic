@@ -17,8 +17,9 @@ port (
     addra  : in  std_logic_vector(ADDR-1 downto 0) := (others => '0');
     dina   : in  std_logic_vector(DATA-1 downto 0) := (others => '0');
     -- Port B
-    addrb  : in  std_logic_vector(ADDR-1 downto 0) := (others => '0');
-    doutb  : out std_logic_vector(DATA-1 downto 0) := (others => '0')
+    addrb     : in  std_logic_vector(ADDR-1 downto 0) := (others => '0');
+    addrb_out : out  std_logic_vector(ADDR-1 downto 0) := (others => '0');
+    doutb     : out std_logic_vector(DATA-1 downto 0) := (others => '0')
 );
 end bram_sdp_cc;
  
@@ -35,10 +36,13 @@ begin
             mem(conv_integer(addra)) <= dina;
         end if;
         doutb <= mem(conv_integer(addrb));
+        addrb_out <= addrb;
     end if;
 end process;
  
-end read_first;
+end architecture;
+
+
 ------------------------------------------------------------------------
 
 ------------------------------------------------------------------------
