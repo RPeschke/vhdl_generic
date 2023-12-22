@@ -58,6 +58,7 @@ package bram_sdp_cc_pkg is
     procedure push_back(self: inout mem_handler_t ; data :in  std_logic_vector) ;
     procedure write_data(self: inout mem_handler_t ; addr :in  std_logic_vector; data :in  std_logic_vector) ;
     procedure reset(self: inout mem_handler_t  ) ;
+    procedure reset_to(self: inout mem_handler_t ; addr :in  std_logic_vector) ;
     
     procedure set_read_addr(self: inout mem_handler_t ; addr :in  std_logic_vector) ;
     procedure set_read_addr(self: inout mem_handler_t ; addr :in  integer) ;
@@ -115,6 +116,12 @@ package body bram_sdp_cc_pkg is
     begin 
         self.m2s := mem_handler_t_m2s_null;
         self.s2m := mem_handler_t_s2m_null;
+    end procedure;
+
+    procedure reset_to(self: inout mem_handler_t ; addr :in  std_logic_vector) is 
+    begin 
+        reset(self);
+        self.m2s.addra    := addr;
     end procedure;
 
     procedure set_read_addr(self: inout mem_handler_t ; addr :in  std_logic_vector) is 

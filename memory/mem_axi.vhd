@@ -27,9 +27,9 @@ entity fifo_cc_axi is
     counter : out std_logic_vector(DEPTH-1 downto 0) := (others => '0')
     
   );
-end fifo_cc_axi;
+end entity;
 
-architecture fifo_cc_axi_arch of fifo_cc_axi is
+architecture rtl of fifo_cc_axi is
   signal  din   :  std_logic_vector(DATA_WIDTH downto 0) := (others => '0'); 
   signal  wen   : std_logic := '0';
   signal  ren   : std_logic := '0';
@@ -45,11 +45,14 @@ begin
   ) port map (
     clk   => clk,
     rst   => rst,
+    
     din   => din,
     wen   => wen,
+    full  => full,
+
+
     ren   => ren,
     dout  => dout,
-    full  => full,
     empty => empty
     
   );
@@ -90,20 +93,12 @@ begin
         TX_Last <= '0';
       end if;
 
-      if reciving_data = '1' and TX_Valid_buffer = '0' then
-        TX_Data <= dout(DATA_WIDTH downto 1);
-        TX_Last <= dout(0);
-        TX_Valid_buffer := '1';
-        reciving_data := '0';
-      elsif reciving_data = '1' and fifo_buffer_valid = '0' then 
-        fifo_buffer := dout;
-        fifo_buffer_valid := '1';
-        reciving_data := '0';
-      elsif reciving_data = '1' and fifo_buffer_valid1 = '0' then 
-        fifo_buffer1 := dout;
+      
+      
+      if reciving_data = '1' and fifo_buffer_valid1 = '0' then 
+        fifo_buffer1       := dout;
         fifo_buffer_valid1 := '1';
-        reciving_data := '0';
-
+        reciving_data      := '0';
       end if;
 
 
@@ -112,6 +107,8 @@ begin
         fifo_buffer_valid := fifo_buffer_valid1;
         fifo_buffer_valid1 := '0';
       end if;
+
+
       if  fifo_buffer_valid = '1' and TX_Valid_buffer = '0' then 
         TX_Data <= fifo_buffer(DATA_WIDTH downto 1);
         TX_Last <= fifo_buffer(0);
@@ -120,7 +117,7 @@ begin
       end if;
 
 
-      if (TX_Valid_buffer = '0' or  fifo_buffer_valid = '0'   ) and empty ='0'  then 
+      if fifo_buffer_valid = '0' and empty ='0'  then 
         ren_proto <= '1';
       end if;
 
@@ -128,5 +125,5 @@ begin
       TX_Valid <= TX_Valid_buffer;
     end if;
   end process;
-end fifo_cc_axi_arch;
+end architecture;
 
