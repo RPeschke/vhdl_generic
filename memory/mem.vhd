@@ -130,6 +130,8 @@ architecture fifo_cc_arch of fifo_cc is
    signal i_full      : std_logic;
    signal i_empty     : std_logic;
    signal i_empty_r   : std_logic;
+   
+   signal i_empty_out   : std_logic;
                      
    signal i_waddr     : std_logic_vector(DEPTH-1 downto 0) := (others => '0');
    signal i_raddr     : std_logic_vector(DEPTH-1 downto 0) := (others => '0');
@@ -162,7 +164,8 @@ begin
 
    full     <= i_full;
 
-   empty    <= i_empty or i_empty_r;
+   empty        <= i_empty_out;
+   i_empty_out  <= i_empty or i_empty_r;
 
    process(clk)
    begin
@@ -183,7 +186,7 @@ begin
          else
             if wen = '1' and i_ren = '0' and i_full = '0' then
                i_cnt <= i_cnt + '1';
-            elsif wen = '0' and i_ren = '1' and i_empty = '0' then
+            elsif wen = '0' and i_ren = '1' and i_empty_out = '0' then
                i_cnt <= i_cnt - '1';
             end if;
          end if;
@@ -207,7 +210,7 @@ begin
                end if;
             end if;
 
-            if (i_ren = '1' and i_empty = '0') then
+            if (i_ren = '1' and i_empty_out = '0') then
                if i_raddr = MAX_ADDR then
                   i_raddr <= (others => '0');
                else
