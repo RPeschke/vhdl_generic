@@ -10,7 +10,8 @@ library ieee;
 entity fifo_cc_axi is
   generic(
     DATA_WIDTH : natural := 16;
-    DEPTH : natural := 5 
+    DEPTH : natural := 5 ;
+    use_last : boolean := false
   ); 
 
   port(
@@ -30,17 +31,31 @@ entity fifo_cc_axi is
 end entity;
 
 architecture rtl of fifo_cc_axi is
-  signal  din   :  std_logic_vector(DATA_WIDTH downto 0) := (others => '0'); 
+
+
+  function get_data_with(DATA_WIDTH : natural; use_last : boolean) return natural is
+  begin
+    if use_last then
+      return DATA_WIDTH + 1;
+    end if;
+    return DATA_WIDTH;
+
+  end function;
+
+  constant  DATA_WIDTH1 : natural := get_data_with(DATA_WIDTH, use_last);
+
+  signal  din   :  std_logic_vector(DATA_WIDTH1 -1  downto 0) := (others => '0'); 
   signal  wen   : std_logic := '0';
   signal  ren   : std_logic := '0';
   signal  ren_proto   : std_logic := '0';
-  signal  dout  : std_logic_vector(DATA_WIDTH downto 0)  := (others => '0');
+  signal  dout  : std_logic_vector(DATA_WIDTH1 -1 downto 0)  := (others => '0');
   signal  full  : std_logic := '0';
   signal  empty : std_logic := '0';
 
+
 begin
-  e_fifo_cc : entity work.fifo_cc generic map(
-    DATA_WIDTH =>  DATA_WIDTH + 1,
+  e_fifo_cc : entity work.fifo_cc_v2 generic map(
+    DATA_WIDTH =>  DATA_WIDTH1 ,
     DEPTH =>  DEPTH 
   ) port map (
     clk   => clk,
@@ -56,15 +71,24 @@ begin
     empty => empty
     
   );
-  din      <= RX_Data & RX_Last;
+  gen : if use_last generate
+    din      <=  RX_Last & RX_Data ;
+  end generate gen;
+
+  gen1 : if not use_last generate
+    din      <=   RX_Data ;
+  end generate gen1;
+
+
+  
   wen      <= RX_Valid when full = '0' else '0';
   RX_Ready <= '1' when full ='0'  else '0'; 
-  ren      <= ren_proto when empty = '0' else '0';
+  ren      <= ren_proto;-- when empty = '0' else '0';
 
   p_readout : process(clk) is
-    variable fifo_buffer  : std_logic_vector(DATA_WIDTH downto 0)  := (others => '0');
+    variable fifo_buffer  : std_logic_vector(DATA_WIDTH1 - 1 downto 0)  := (others => '0');
     variable fifo_buffer_valid  : std_logic :=  '0';
-    variable fifo_buffer1  : std_logic_vector(DATA_WIDTH downto 0)  := (others => '0');
+    variable fifo_buffer1  : std_logic_vector(DATA_WIDTH1 -1 downto 0)  := (others => '0');
     variable fifo_buffer_valid1  : std_logic :=  '0';
     variable TX_Valid_buffer   : std_logic := '0';
     variable ReadEnable1 : std_logic := '0';
@@ -110,8 +134,12 @@ begin
 
 
       if  fifo_buffer_valid = '1' and TX_Valid_buffer = '0' then 
-        TX_Data <= fifo_buffer(DATA_WIDTH downto 1);
-        TX_Last <= fifo_buffer(0);
+        if use_last then
+          TX_Data <= fifo_buffer(DATA_WIDTH -1  downto 0);
+          TX_Last <= fifo_buffer(DATA_WIDTH);
+        else
+          TX_Data <= fifo_buffer(DATA_WIDTH -1  downto 0);
+        end if;
         TX_Valid_buffer := '1';
         fifo_buffer_valid := '0';
       end if;

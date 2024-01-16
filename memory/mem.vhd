@@ -104,7 +104,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 
-entity fifo_cc is
+entity fifo_cc_v2 is
 generic(
    DATA_WIDTH : natural := 16;
    DEPTH : natural := 5 
@@ -122,9 +122,9 @@ port(
    counter : out std_logic_vector(DEPTH-1 downto 0) := (others => '0')
 
 );
-end fifo_cc;
+end entity;
 
-architecture fifo_cc_arch of fifo_cc is
+architecture fifo_cc_arch of fifo_cc_v2 is
    
    signal i_ren       : std_logic;
    signal i_full      : std_logic;
@@ -175,8 +175,8 @@ begin
    end process;
    ----
 
-   i_ren <= ren;
-
+   --i_ren <= ren;
+   i_ren      <= ren when i_empty_out = '0' else '0';
    ---- count number of words in FIFO
    FIFO_CNT_PROC : process(clk)
    begin
